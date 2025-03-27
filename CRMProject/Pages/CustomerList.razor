@@ -1,0 +1,122 @@
+﻿@page "/customers"
+@inject CRMProject.Application.Services.ICustomerService CustomerService
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <h3 class="mb-3">Customer Accounts</h3>
+    <button class="btn btn-primary" @onclick="NavigateToAdd">Add New Account</button>
+
+    <table class="table table-striped table-hover">
+        <thead>
+            <tr>
+                <th>Account Id</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th style="width: 200px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in customers)
+            {
+                <tr>
+                    <td>@customer.AccountId</td>
+                    <td>
+                        @if (editingCustomer?.AccountId == customer.AccountId)
+                        {
+                            <InputText @bind-Value="editingCustomer.FirstName" class="form-control form-control-sm" />
+                        }
+                        else
+                        {
+                            @customer.FirstName
+                        }
+                    </td>
+                    <td>
+                        @if (editingCustomer?.AccountId == customer.AccountId)
+                        {
+                            <InputText @bind-Value="editingCustomer.LastName" class="form-control form-control-sm" />
+                        }
+                        else
+                        {
+                            @customer.LastName
+                        }
+                    </td>
+                    <td>
+                        @if (editingCustomer?.AccountId == customer.AccountId)
+                        {
+                            <InputText @bind-Value="editingCustomer.Email" class="form-control form-control-sm" />
+                        }
+                        else
+                        {
+                            @customer.Email
+                        }
+                    </td>
+                    <td>
+                        @customer.Phone
+                    </td>
+                    <td>
+                        @if (editingCustomer?.AccountId == customer.AccountId)
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="() => SaveCustomer(customer)">Save</button>
+                            <button class="btn btn-danger btn-sm" @onclick="CancelEdit">Cancel</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="() => EditCustomer(customer)">Edit</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteCustomer(customer.AccountId)">Delete</button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code
+{
+    private List<Customer> customers = new();
+    private Customer editingCustomer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        customers = (await CustomerService.GetAllCustomersAsync()).ToList();
+    }
+    private void NavigateToAdd()
+    {
+        NavigationManager.NavigateTo("/add-customer");
+    }
+    private void EditCustomer(Customer customer)
+    {
+        editingCustomer = new Customer
+        {
+                AccountId = customer.AccountId,
+                FirstName = customer.FirstName,
+                LastName = customer.LastName,
+                Email = customer.Email,
+                Phone = customer.Phone,
+                Address = customer.Address,
+                City = customer.City,
+                State = customer.State,
+                Country = customer.Country,
+                DateCreated = customer.DateCreated
+        };
+    }
+    private async void DeleteCustomer(int id)
+    {
+        await CustomerService.DeleteCustomerAsync(id);
+        customers = (await CustomerService.GetAllCustomersAsync()).ToList();
+    }
+
+    private async Task SaveCustomer(Customer customer)
+    {
+        await CustomerService.UpdateCustomerAsync(editingCustomer);
+        editingCustomer = null;
+        customers = (await CustomerService.GetAllCustomersAsync()).ToList();
+    }
+
+    private async Task CancelEdit()
+    {
+        editingCustomer = null;
+    }
+}
